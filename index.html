@@ -160,13 +160,14 @@
   <div id="setup">
     <h1>IPTV Player para Smart TV</h1>
     <p class="hint">
-      Cole abaixo o endereco (URL) da sua playlist M3U/M3U8, ou cole o conteudo M3U diretamente.
+      Este player ja carrega automaticamente uma lista publica de canais (iptv-org) ao abrir.
+      Se preferir, cole abaixo o endereco (URL) da sua propria playlist M3U/M3U8, ou cole o conteudo M3U diretamente.
       Use as setas do controle remoto para navegar e OK/Enter para selecionar.
     </p>
 
     <div class="row">
       <label for="playlistUrl">URL da playlist M3U (.m3u / .m3u8)</label>
-      <input type="text" id="playlistUrl" placeholder="https://exemplo.com/lista.m3u" />
+      <input type="text" id="playlistUrl" placeholder="https://iptv-org.github.io/iptv/index.m3u" />
     </div>
 
     <div class="row">
@@ -759,13 +760,19 @@ https://exemplo.com/stream.m3u8"></textarea>
     ensureHlsJsLoaded(function () {});
   }
 
-  // Restaura ultima URL usada
-  try {
-    var last = localStorage.getItem(STORAGE_KEY);
-    if (last) {
-      document.getElementById("playlistUrl").value = last;
-    }
-  } catch (e) {}
+  // Playlist padrao: catalogo publico do projeto iptv-org (milhares de canais,
+  // hospedado no GitHub Pages, que libera CORS por padrao).
+  var DEFAULT_PLAYLIST_URL = "https://iptv-org.github.io/iptv/index.m3u";
+
+  // Restaura ultima URL usada (se o usuario ja carregou algo antes, respeita a escolha dele)
+  var savedUrl = null;
+  try { savedUrl = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+
+  var initialUrl = savedUrl || DEFAULT_PLAYLIST_URL;
+  document.getElementById("playlistUrl").value = initialUrl;
+
+  // Carrega automaticamente ao abrir a pagina
+  loadFromUrl(initialUrl);
 
   rebuildFocusables();
 })();
