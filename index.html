@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280, initial-scale=1.0">
+<title>IPTV Player TV</title>
+<style>
+  /* CSS bem simples, sem flexbox avancado nem grid, para maxima compatibilidade */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: #0a0a0a;
+    color: #f2f2f2;
+    font-family: Arial, Helvetica, sans-serif;
+    overflow: hidden;
+  }
+  #app {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+
+  /* Tela de configuracao (lista de canais + carregar playlist) */
+  #setup {
+    width: 100%;
+    height: 100%;
+    padding: 40px;
+    overflow-y: auto;
+  }
+  #setup h1 {
+    font-size: 34px;
+    margin-bottom: 20px;
+    color: #ffffff;
+  }
+  #setup .hint {
+    font-size: 18px;
+    color: #b3b3b3;
+    margin-bottom: 20px;
+    line-height: 1.4;
+  }
+  .row {
+    margin-bottom: 20px;
+  }
+  .row label {
+    display: block;
+    font-size: 20px;
+    margin-bottom: 8px;
+    color: #dddddd;
+  }
+  .row input[type="text"], .row textarea {
+    width: 100%;
+    font-size: 20px;
+    padding: 12px;
+    border: 3px solid #444;
+    border-radius: 6px;
+    background: #1a1a1a;
+    color: #fff;
+  }
+  .row textarea {
+    height: 120px;
+    resize: none;
+    font-family: monospace;
+  }
+  .btn {
+    display: inline-block;
+    font-size: 20px;
+    padding: 12px 28px;
+    background: #2b6cb0;
+    color: #fff;
+    border: 3px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-right: 12px;
+    margin-top: 6px;
+  }
+  .btn:focus, .btn.focused {
+    border-color: #ffd166;
+    outline: none;
+    background: #3182ce;
+  }
+
+  #channelListWrap {
+    margin-top: 30px;
+  }
+  #channelListWrap h2 {
+    font-size: 24px;
+    margin-bottom: 12px;
+    color: #ffffff;
+  }
+  #channelList {
+    list-style: none;
+    max-height: 55vh;
+    overflow-y: auto;
+    border: 2px solid #333;
+    border-radius: 6px;
+  }
+  #channelList li {
+    font-size: 22px;
+    padding: 14px 18px;
+    border-bottom: 1px solid #262626;
+    color: #e6e6e6;
+    cursor: pointer;
+  }
+  #channelList li:last-child { border-bottom: none; }
+  #channelList li.focused {
+    background: #2b6cb0;
+    color: #ffffff;
+    outline: 3px solid #ffd166;
+  }
+  #status {
+    margin-top: 16px;
+    font-size: 18px;
+    color: #ffb347;
+    min-height: 24px;
+  }
+
+  /* Tela do player */
+  #playerScreen {
+    width: 100%;
+    height: 100%;
+    display: none;
+    background: #000;
+    position: relative;
+  }
+  #video {
+    width: 100%;
+    height: 100%;
+    background: #000;
+  }
+  #osd {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    padding: 18px 30px;
+    background: rgba(0,0,0,0.65);
+    font-size: 22px;
+    color: #fff;
+    display: none;
+  }
+  #helpBar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 14px 30px;
+    background: rgba(0,0,0,0.55);
+    font-size: 16px;
+    color: #cccccc;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- TELA DE CONFIGURACAO / LISTA DE CANAIS -->
+  <div id="setup">
+    <h1>IPTV Player para Smart TV</h1>
+    <p class="hint">
+      Cole abaixo o endereco (URL) da sua playlist M3U/M3U8, ou cole o conteudo M3U diretamente.
+      Use as setas do controle remoto para navegar e OK/Enter para selecionar.
+    </p>
+
+    <div class="row">
+      <label for="playlistUrl">URL da playlist M3U (.m3u / .m3u8)</label>
+      <input type="text" id="playlistUrl" placeholder="https://exemplo.com/lista.m3u" />
+    </div>
+
+    <div class="row">
+      <button class="btn" id="btnLoadUrl" tabindex="0">Carregar por URL (lista M3U)</button>
+      <button class="btn" id="btnAddSingle" tabindex="0">Adicionar como canal único</button>
+      <button class="btn" id="btnPasteToggle" tabindex="0">Colar lista manualmente</button>
+      <button class="btn" id="btnDemo" tabindex="0">Carregar lista de exemplo</button>
+    </div>
+    <p class="hint" style="margin-top:-8px;">
+      Use "Carregar por URL" quando o link aponta para um arquivo de lista com varios canais.
+      Use "Adicionar como canal único" quando o link e o proprio stream de video (ex.: encurtadores como jmp2.uk,
+      ou uma URL .m3u8/.mp4 de um unico canal) — nesse caso o navegador nao precisa ler o conteudo, so reproduzir.
+      Obs.: cada servidor decide se libera ou nao a leitura via navegador (CORS); por isso alguns links funcionam
+      direto com "Carregar por URL" e outros so funcionam como "canal único" (o player ja tenta isso automaticamente
+      quando detecta o bloqueio).
+    </p>
+
+    <div class="row" id="pasteRow" style="display:none;">
+      <label for="playlistText">Cole aqui o conteudo da playlist M3U</label>
+      <textarea id="playlistText" placeholder="#EXTM3U
+#EXTINF:-1,Canal Exemplo
+https://exemplo.com/stream.m3u8"></textarea>
+      <button class="btn" id="btnLoadText" tabindex="0" style="margin-top:10px;">Carregar texto colado</button>
+    </div>
+
+    <div id="status"></div>
+
+    <div id="channelListWrap">
+      <h2>Canais</h2>
+      <ul id="channelList"></ul>
+    </div>
+  </div>
+
+  <!-- TELA DO PLAYER -->
+  <div id="playerScreen">
+    <video id="video" controls autoplay></video>
+    <div id="helpBar">Voltar/Back: retorna a lista &nbsp;|&nbsp; Setas: volume/navegacao &nbsp;|&nbsp; OK: play/pause</div>
+    <div id="osd"></div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var STORAGE_KEY = "iptv_player_playlist_url";
+  var channels = [];
+  var focusIndex = -1;
+  var focusables = []; // elementos focaveis na tela atual (setup)
+  var video = document.getElementById("video");
+  var setupScreen = document.getElementById("setup");
+  var playerScreen = document.getElementById("playerScreen");
+  var statusEl = document.getElementById("status");
+  var channelListEl = document.getElementById("channelList");
+  var osd = document.getElementById("osd");
+  var helpBar = document.getElementById("helpBar");
+  var hlsInstance = null;
+
+  function setStatus(msg) {
+    statusEl.textContent = msg || "";
+  }
+
+  // ---------- Parser de M3U simples (sem dependencias) ----------
+  function parseM3U(text) {
+    var lines = text.split(/\r?\n/);
+    var list = [];
+    var currentName = null;
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      if (!line) { continue; }
+      line = line.replace(/^\s+|\s+$/g, "");
+      if (line.indexOf("#EXTINF") === 0) {
+        var commaIdx = line.lastIndexOf(",");
+        currentName = commaIdx >= 0 ? line.substring(commaIdx + 1) : "Canal";
+      } else if (line.indexOf("#") === 0) {
+        // outras tags M3U (ignoradas)
+        continue;
+      } else {
+        // linha de URL
+        list.push({
+          name: currentName || line,
+          url: line
+        });
+        currentName = null;
+      }
+    }
+    return list;
+  }
+
+  function renderChannelList() {
+    channelListEl.innerHTML = "";
+    for (var i = 0; i < channels.length; i++) {
+      var li = document.createElement("li");
+      li.textContent = channels[i].name;
+      li.setAttribute("data-index", i);
+      li.setAttribute("tabindex", "0");
+      (function (idx) {
+        li.addEventListener("click", function () { playChannel(idx); });
+      })(i);
+      channelListEl.appendChild(li);
+    }
+    rebuildFocusables();
+  }
+
+  // Dominios de servicos de streaming licenciados/comerciais que bloqueiam explicitamente
+  // reproducao fora dos apps oficiais (via CORS restrito e/ou DRM). Nao adicionamos esses
+  // links a lista de canais -- nao e um problema tecnico a "contornar", e uma restricao
+  // proposital de licenciamento de conteudo.
+  var BLOCKED_HOST_PATTERNS = [
+    /(^|\.)pluto\.tv$/i,
+    /(^|\.)tubitv\.com$/i,
+    /(^|\.)plex\.tv$/i,
+    /(^|\.)xumo\.com$/i,
+    /(^|\.)therokuchannel\.roku\.com$/i,
+    /(^|\.)sling\.com$/i,
+    /(^|\.)fubo\.tv$/i,
+    /(^|\.)philo\.com$/i,
+    /(^|\.)hulu\.com$/i,
+    /(^|\.)netflix\.com$/i,
+    /(^|\.)disneyplus\.com$/i,
+    /(^|\.)max\.com$/i,
+    /(^|\.)peacocktv\.com$/i,
+    /(^|\.)paramountplus\.com$/i,
+    /(^|\.)primevideo\.com$/i,
+    /(^|\.)crunchyroll\.com$/i,
+    /(^|\.)globoplay\.globo\.com$/i
+  ];
+
+  function getHostname(url) {
+    try {
+      // new URL() e suficiente aqui: se a TV nao suportar, o catch abaixo lida com isso
+      return new URL(url).hostname;
+    } catch (e) {
+      var m = url.match(/^https?:\/\/([^\/:]+)/i);
+      return m ? m[1] : "";
+    }
+  }
+
+  function isBlockedStreamingService(url) {
+    var host = getHostname(url);
+    if (!host) { return false; }
+    for (var i = 0; i < BLOCKED_HOST_PATTERNS.length; i++) {
+      if (BLOCKED_HOST_PATTERNS[i].test(host)) { return true; }
+    }
+    return false;
+  }
+
+  // Converte links do formato github.com/OWNER/REPO/raw|blob/BRANCH/PATH
+  // (que nao enviam cabecalho CORS) para raw.githubusercontent.com (que envia).
+  function normalizePlaylistUrl(url) {
+    var re = /^https?:\/\/github\.com\/([^\/]+)\/([^\/]+)\/(?:raw|blob)\/(?:refs\/heads\/)?([^\/]+)\/(.+)$/i;
+    var m = url.match(re);
+    if (m) {
+      return "https://raw.githubusercontent.com/" + m[1] + "/" + m[2] + "/" + m[3] + "/" + m[4];
+    }
+    return url;
+  }
+
+  function filterBlockedChannels(list) {
+    var kept = [];
+    var skipped = 0;
+    for (var i = 0; i < list.length; i++) {
+      if (isBlockedStreamingService(list[i].url)) {
+        skipped++;
+      } else {
+        kept.push(list[i]);
+      }
+    }
+    return { kept: kept, skipped: skipped };
+  }
+
+  function loadFromUrl(rawUrl) {
+    if (!rawUrl) { setStatus("Informe uma URL valida."); return; }
+    var url = normalizePlaylistUrl(rawUrl);
+    if (url !== rawUrl) {
+      setStatus("Link do GitHub convertido automaticamente para um formato compativel com CORS...");
+    } else {
+      setStatus("Carregando playlist...");
+    }
+    var fallbackDone = false;
+    function fallbackToSingleChannel(msg) {
+      if (fallbackDone) { return; } // evita duplicar o canal se onerror e onreadystatechange dispararem juntos
+      fallbackDone = true;
+      setStatus(msg);
+      addSingleChannel(rawUrl);
+    }
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", url, true);
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4) {
+        if (xhr.status === 200 && xhr.responseText) {
+          var parsed = parseM3U(xhr.responseText);
+          var filtered = filterBlockedChannels(parsed);
+          channels = filtered.kept;
+          if (channels.length === 0 && filtered.skipped === 0) {
+            setStatus("Nenhum canal encontrado nessa playlist.");
+          } else {
+            var msg = channels.length + " canal(is) carregado(s).";
+            if (filtered.skipped > 0) {
+              msg += " " + filtered.skipped + " canal(is) de servicos de streaming licenciado foram ignorados automaticamente (ex.: Pluto TV, Tubi).";
+            }
+            setStatus(msg);
+            try { localStorage.setItem(STORAGE_KEY, rawUrl); } catch (e) {}
+          }
+          renderChannelList();
+        } else {
+          fallbackToSingleChannel("Nao foi possivel ler o conteudo dessa URL (status " + xhr.status + ", provavel bloqueio de CORS individual desse servidor). Adicionando automaticamente como canal unico, sem leitura do conteudo...");
+        }
+      }
+    };
+    xhr.onerror = function () {
+      fallbackToSingleChannel("Erro de rede ao buscar a playlist (bloqueio de CORS/redirecionamento desse servidor especifico). Adicionando automaticamente como canal unico, sem leitura do conteudo...");
+    };
+    xhr.send();
+  }
+
+  // Adiciona a URL diretamente como um canal, SEM tentar ler/parsear o conteudo remoto.
+  // Util quando a URL e o proprio stream (ou um encurtador que redireciona para ele),
+  // e o servidor nao libera CORS para leitura via JavaScript -- mas a reproducao nativa
+  // via <video> nao depende de CORS, entao isso continua funcionando.
+  function addSingleChannel(rawUrl) {
+    if (!rawUrl) { setStatus("Informe uma URL valida."); return; }
+    if (isBlockedStreamingService(rawUrl)) {
+      setStatus("Este link pertence a um servico de streaming licenciado (ex.: Pluto TV, Tubi, etc.) que bloqueia intencionalmente reproducao fora do app oficial. Nao foi adicionado a lista.");
+      return;
+    }
+    var url = normalizePlaylistUrl(rawUrl);
+    channels.push({ name: "Canal " + (channels.length + 1) + " (URL direta)", url: url });
+    renderChannelList();
+    setStatus("Canal adicionado sem leitura do conteudo remoto. Selecione-o na lista abaixo para reproduzir. " +
+      "Obs.: se o navegador precisar cair para o hls.js (sem HLS nativo), o servidor do stream ainda " +
+      "precisara liberar CORS para os segmentos de video -- isso depende do provedor, nao do player.");
+    try { localStorage.setItem(STORAGE_KEY, rawUrl); } catch (e) {}
+  }
+
+  function loadFromText(text) {
+    if (!text || text.replace(/\s/g, "") === "") {
+      setStatus("Cole o conteudo da playlist antes de carregar.");
+      return;
+    }
+    var parsed = parseM3U(text);
+    var filtered = filterBlockedChannels(parsed);
+    channels = filtered.kept;
+    if (channels.length === 0 && filtered.skipped === 0) {
+      setStatus("Nenhum canal reconhecido no texto colado.");
+    } else {
+      var msg = channels.length + " canal(is) carregado(s).";
+      if (filtered.skipped > 0) {
+        msg += " " + filtered.skipped + " canal(is) de servicos de streaming licenciado foram ignorados automaticamente (ex.: Pluto TV, Tubi).";
+      }
+      setStatus(msg);
+    }
+    renderChannelList();
+  }
+
+  // Lista de exemplo com streams de teste publicos (uso livre para testes)
+  function loadDemo() {
+    var demo = "#EXTM3U\n" +
+      "#EXTINF:-1,Demo - Big Buck Bunny (HLS)\n" +
+      "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8\n" +
+      "#EXTINF:-1,Demo - Apple Basic Stream\n" +
+      "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8\n";
+    loadFromText(demo);
+    setStatus("Lista de exemplo carregada (streams publicos de teste).");
+  }
+
+  // ---------- Reproducao ----------
+  function playChannel(index) {
+    var ch = channels[index];
+    if (!ch) { return; }
+    setupScreen.style.display = "none";
+    playerScreen.style.display = "block";
+    helpBar.style.display = "block";
+    showOsd(ch.name);
+    startPlayback(ch.url);
+  }
+
+  function destroyHls() {
+    if (hlsInstance) {
+      try { hlsInstance.destroy(); } catch (e) {}
+      hlsInstance = null;
+    }
+  }
+
+  // Toca o video tratando o bloqueio de autoplay dos navegadores:
+  // tenta com som; se for rejeitado, tenta mudo e avisa o usuario.
+  function safePlay() {
+    var p;
+    try { p = video.play(); } catch (e) { p = null; }
+    if (p && typeof p.then === "function") {
+      p.catch(function () {
+        if (!video.muted) {
+          video.muted = true;
+          showOsd("Som desativado pelo navegador. Pressione OK ou toque na tela para reativar o som.");
+          var retry = video.play();
+          if (retry && retry.catch) {
+            retry.catch(function () {
+              setStatus("O navegador bloqueou a reproducao automatica. Use o botao de play do proprio video.");
+            });
+          }
+          armUnmuteOnInteraction();
+        }
+      });
+    }
+  }
+
+  var unmuteArmed = false;
+  function armUnmuteOnInteraction() {
+    if (unmuteArmed) { return; }
+    unmuteArmed = true;
+    var unmute = function () {
+      video.muted = false;
+      unmuteArmed = false;
+      document.removeEventListener("keydown", unmute);
+      document.removeEventListener("click", unmute);
+    };
+    document.addEventListener("keydown", unmute);
+    document.addEventListener("click", unmute);
+  }
+
+  // Carregamento do hls.js com fila de espera (evita tentar usar Hls antes do script terminar de carregar)
+  var hlsLibStatus = "idle"; // idle | loading | ready | failed
+  var hlsReadyQueue = [];
+
+  // Alguns navegadores de Smart TV / apps hibridos ja trazem uma versao do hls.js
+  // pre-carregada globalmente (window.Hls). Checamos isso primeiro, antes de tentar
+  // baixar qualquer coisa da internet -- importante para TVs com acesso limitado a CDNs externos.
+  function hasBuiltInHls() {
+    return !!(window.Hls && window.Hls.isSupported);
+  }
+
+  // Varios CDNs de fallback: uma TV antiga pode ter DNS/certificado que falha
+  // com um CDN especifico mas funciona com outro.
+  var HLS_CDN_URLS = [
+    "https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.13/hls.min.js",
+    "https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js",
+    "https://unpkg.com/hls.js@1.5.13/dist/hls.min.js"
+  ];
+
+  function tryLoadScript(src, onDone) {
+    var settled = false;
+    var script = document.createElement("script");
+    script.src = src;
+    script.async = true;
+    var timer = setTimeout(function () {
+      if (!settled) { settled = true; onDone(false); }
+    }, 8000);
+    script.onload = function () {
+      if (settled) { return; }
+      settled = true;
+      clearTimeout(timer);
+      onDone(true);
+    };
+    script.onerror = function () {
+      if (settled) { return; }
+      settled = true;
+      clearTimeout(timer);
+      onDone(false);
+    };
+    document.head.appendChild(script);
+  }
+
+  function resolveHlsQueue(ok) {
+    hlsLibStatus = ok ? "ready" : "failed";
+    var q = hlsReadyQueue;
+    hlsReadyQueue = [];
+    for (var i = 0; i < q.length; i++) { q[i](ok); }
+  }
+
+  function ensureHlsJsLoaded(callback) {
+    // 1) A TV ja tem hls.js embutido? Usa direto, sem baixar nada.
+    if (hasBuiltInHls()) { hlsLibStatus = "ready"; callback(true); return; }
+    if (hlsLibStatus === "failed") { callback(false); return; }
+    hlsReadyQueue.push(callback);
+    if (hlsLibStatus === "loading") { return; }
+    hlsLibStatus = "loading";
+
+    // 2) Nao tem embutido: tenta os CDNs em sequencia ate um funcionar.
+    var idx = 0;
+    function tryNextCdn() {
+      if (hasBuiltInHls()) { resolveHlsQueue(true); return; }
+      if (idx >= HLS_CDN_URLS.length) { resolveHlsQueue(false); return; }
+      var url = HLS_CDN_URLS[idx];
+      idx++;
+      tryLoadScript(url, function (ok) {
+        if (ok && hasBuiltInHls()) {
+          resolveHlsQueue(true);
+        } else {
+          tryNextCdn();
+        }
+      });
+    }
+    tryNextCdn();
+  }
+
+  function tryHlsJs(url) {
+    setStatus("Carregando reprodutor HLS (hls.js)...");
+    ensureHlsJsLoaded(function (ok) {
+      if (ok && window.Hls && window.Hls.isSupported && window.Hls.isSupported()) {
+        setStatus("");
+        hlsInstance = new window.Hls();
+        hlsInstance.loadSource(url);
+        hlsInstance.attachMedia(video);
+        hlsInstance.on(window.Hls.Events.MANIFEST_PARSED, function () {
+          safePlay();
+        });
+        hlsInstance.on(window.Hls.Events.ERROR, function (event, data) {
+          if (data && data.fatal) {
+            setStatus("Erro ao reproduzir via hls.js (" + data.type + "). O canal pode estar fora do ar ou bloqueado.");
+          }
+        });
+      } else {
+        setStatus("Este navegador nao suporta HLS nativo nem MediaSource Extensions (hls.js). Nao e possivel reproduzir este canal aqui.");
+        backToList();
+      }
+    });
+  }
+
+  function tryNativeThenFallback(url) {
+    var canNative = video.canPlayType("application/vnd.apple.mpegurl") ||
+                     video.canPlayType("application/x-mpegURL");
+    if (!canNative) {
+      tryHlsJs(url);
+      return;
+    }
+    var fellBack = false;
+    var onErr = function () {
+      video.removeEventListener("error", onErr);
+      if (!fellBack) {
+        fellBack = true;
+        tryHlsJs(url);
+      }
+    };
+    video.addEventListener("error", onErr);
+    video.src = url;
+    safePlay();
+  }
+
+  function startPlayback(url) {
+    destroyHls();
+    video.muted = false;
+    video.pause();
+    video.removeAttribute("src");
+    video.load();
+
+    var cleanUrl = url.split("?")[0];
+    var ext = cleanUrl.substring(cleanUrl.lastIndexOf(".") + 1).toLowerCase();
+    var directExts = ["mp4", "webm", "ogg", "ogv", "mov", "mkv"];
+
+    if (directExts.indexOf(ext) !== -1) {
+      // arquivo de video direto -- HTML5 nativo
+      video.src = url;
+      safePlay();
+      return;
+    }
+
+    // trata como HLS (extensao .m3u8 ou desconhecida): tenta nativo, cai para hls.js se falhar
+    tryNativeThenFallback(url);
+  }
+
+  function backToList() {
+    destroyHls();
+    video.pause();
+    video.removeAttribute("src");
+    video.load();
+    playerScreen.style.display = "none";
+    helpBar.style.display = "none";
+    osd.style.display = "none";
+    setupScreen.style.display = "block";
+  }
+
+  var osdTimer = null;
+  function showOsd(text) {
+    osd.textContent = text;
+    osd.style.display = "block";
+    if (osdTimer) { clearTimeout(osdTimer); }
+    osdTimer = setTimeout(function () { osd.style.display = "none"; }, 4000);
+  }
+
+  // ---------- Navegacao por controle remoto / teclado ----------
+  function rebuildFocusables() {
+    focusables = [];
+    var btns = setupScreen.querySelectorAll(".btn, #playlistUrl, #playlistText, #channelList li");
+    for (var i = 0; i < btns.length; i++) {
+      // ignora elementos ocultos (ex.: dentro de #pasteRow quando display:none)
+      if (btns[i].offsetParent !== null) {
+        focusables.push(btns[i]);
+      }
+    }
+    if (focusIndex >= focusables.length) { focusIndex = focusables.length - 1; }
+    if (focusIndex < 0 && focusables.length > 0) { focusIndex = 0; }
+    applyFocusClass();
+  }
+
+  function applyFocusClass() {
+    for (var i = 0; i < focusables.length; i++) {
+      if (i === focusIndex) {
+        focusables[i].className = focusables[i].className.replace(/\s*focused/, "") + " focused";
+        try { focusables[i].focus(); } catch (e) {}
+      } else {
+        focusables[i].className = focusables[i].className.replace(/\s*focused/, "");
+      }
+    }
+  }
+
+  function moveFocus(delta) {
+    if (focusables.length === 0) { return; }
+    focusIndex = focusIndex + delta;
+    if (focusIndex < 0) { focusIndex = 0; }
+    if (focusIndex >= focusables.length) { focusIndex = focusables.length - 1; }
+    applyFocusClass();
+    var el = focusables[focusIndex];
+    if (el && el.scrollIntoView) { el.scrollIntoView({ block: "nearest" }); }
+  }
+
+  function activateFocused() {
+    var el = focusables[focusIndex];
+    if (!el) { return; }
+    var tag = el.tagName.toLowerCase();
+    if (tag === "input" || tag === "textarea") {
+      // em campos de texto, Enter nao ativa; usuario digita normalmente
+      return;
+    }
+    if (el.hasAttribute("data-index")) {
+      playChannel(parseInt(el.getAttribute("data-index"), 10));
+    } else {
+      el.click();
+    }
+  }
+
+  // Codigos de tecla comuns: setas, Enter/OK, Voltar (varia por fabricante de TV)
+  var KEY_UP = [38];
+  var KEY_DOWN = [40];
+  var KEY_LEFT = [37];
+  var KEY_RIGHT = [39];
+  var KEY_OK = [13];
+  var KEY_BACK = [8, 27, 10009, 461]; // backspace, esc, samsung back, lg back
+
+  document.addEventListener("keydown", function (e) {
+    var code = e.keyCode || e.which;
+
+    if (playerScreen.style.display === "block") {
+      if (KEY_BACK.indexOf(code) !== -1) {
+        e.preventDefault();
+        backToList();
+      }
+      return; // demais teclas (setas p/ volume, OK p/ play/pause) ficam a cargo dos controles nativos do <video controls>
+    }
+
+    // Se o foco atual for um campo de texto, nao interceptamos setas/Enter (para permitir digitacao)
+    var active = document.activeElement;
+    var isTyping = active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA");
+
+    if (KEY_DOWN.indexOf(code) !== -1 && !isTyping) {
+      e.preventDefault(); moveFocus(1);
+    } else if (KEY_UP.indexOf(code) !== -1 && !isTyping) {
+      e.preventDefault(); moveFocus(-1);
+    } else if (KEY_OK.indexOf(code) !== -1 && !isTyping) {
+      e.preventDefault(); activateFocused();
+    } else if (KEY_DOWN.indexOf(code) !== -1 && isTyping && active.tagName === "INPUT") {
+      moveFocus(1);
+    }
+  });
+
+  // ---------- Ligacoes de botoes ----------
+  document.getElementById("btnLoadUrl").addEventListener("click", function () {
+    loadFromUrl(document.getElementById("playlistUrl").value.replace(/^\s+|\s+$/g, ""));
+  });
+
+  document.getElementById("btnAddSingle").addEventListener("click", function () {
+    addSingleChannel(document.getElementById("playlistUrl").value.replace(/^\s+|\s+$/g, ""));
+  });
+
+  document.getElementById("btnPasteToggle").addEventListener("click", function () {
+    var row = document.getElementById("pasteRow");
+    row.style.display = (row.style.display === "none") ? "block" : "none";
+    rebuildFocusables();
+  });
+
+  document.getElementById("btnLoadText").addEventListener("click", function () {
+    loadFromText(document.getElementById("playlistText").value);
+  });
+
+  document.getElementById("btnDemo").addEventListener("click", loadDemo);
+
+  // Pre-carrega hls.js em segundo plano (nao bloqueia a pagina); quando o usuario
+  // selecionar um canal, tryNativeThenFallback/tryHlsJs vao reaproveitar esse carregamento.
+  if (window.MediaSource) {
+    ensureHlsJsLoaded(function () {});
+  }
+
+  // Restaura ultima URL usada
+  try {
+    var last = localStorage.getItem(STORAGE_KEY);
+    if (last) {
+      document.getElementById("playlistUrl").value = last;
+    }
+  } catch (e) {}
+
+  rebuildFocusables();
+})();
+</script>
+</body>
+</html>
