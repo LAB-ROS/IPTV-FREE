@@ -151,6 +151,14 @@
     if (textEl) { textEl.textContent = "Selecione um canal para ver a pré-visualização."; }
   }
 
+  function showMiniPlayerInfo(text) {
+    if (!miniPlayerFrame) { return; }
+    var titleEl = miniPlayerFrame.querySelector(".mini-player-title");
+    var textEl = miniPlayerFrame.querySelector(".mini-player-text");
+    if (titleEl) { titleEl.textContent = "Mini player"; }
+    if (textEl) { textEl.textContent = text || "Selecione um canal para ver a pré-visualização."; }
+  }
+
   function showMiniPlayerError(msg) {
     if (!miniPlayerError) { return; }
     miniPlayerError.textContent = msg || "";
@@ -221,6 +229,7 @@
     showMiniPlayerError("");
     if (!miniVideo || !url) {
       showMiniPreviewPlaceholder();
+      showMiniPlayerInfo("Nenhum canal selecionado.");
       return;
     }
 
@@ -268,6 +277,9 @@
     titleEl.textContent = ch.name;
     textEl.textContent = "Canal selecionado · Pressione OK para reproduzir em tela cheia";
     startMiniPreview(ch.url);
+    if (!miniPlayerFrame.classList.contains("is-preview")) {
+      showMiniPlayerInfo("Pré-visualização indisponível para este canal.");
+    }
   }
 
   function renderChannelList() {
