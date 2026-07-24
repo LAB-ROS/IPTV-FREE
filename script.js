@@ -872,67 +872,69 @@
 
 //exibe Informaçãoes do navegador.
 function showFullDebugInfo() {
-    const urlParams = new URLSearchParams(window.location.search);
+    var urlParams = new URLSearchParams(window.location.search);
     if (!urlParams.has('debug')) return;
 
     // 1. Coleta de dados profundos
-    const gl = document.createElement('canvas').getContext('webgl');
-    const dbgRender = gl ? gl.getExtension('WEBGL_debug_renderer_info') : null;
+    var gl = document.createElement('canvas').getContext('webgl');
+    var dbgRender = gl ? gl.getExtension('WEBGL_debug_renderer_info') : null;
     
-    const info = {
+    var info = {
         "--- HARDWARE ---": "",
         "Plataforma": navigator.platform,
-        "CPU (Núcleos)": navigator.hardwareConcurrency || "N/A",
-        "Memória RAM": navigator.deviceMemory ? `~${navigator.deviceMemory}GB` : "N/A",
-        "GPU": dbgRender ? gl.getParameter(dbgRender.UNMASKED_RENDERER_ID) : "Desconhecida",
-        "Fabricante GPU": dbgRender ? gl.getParameter(dbgRender.UNMASKED_VENDOR_ID) : "Desconhecido",
-        
-        "--- TELA E VÍDEO ---": "",
-        "Resolução Real": `${window.screen.width}x${window.screen.height}`,
-        "Janela Atual": `${window.innerWidth}x${window.innerHeight}`,
+        "CPU (Nucleos)": navigator.hardwareConcurrency || "N/A",
+        "Memoria RAM": navigator.deviceMemory ? "~" + navigator.deviceMemory + "GB" : "N/A",
+
+        "--- TELA E VIDEO ---": "",
+        "Resolucao Real": window.screen.width + "x" + window.screen.height,
+        "Janela Atual": window.innerWidth + "x" + window.innerHeight,
         "Densidade Pixel": window.devicePixelRatio,
-        "Profundidade Cor": `${window.screen.colorDepth} bits`,
-        "Suporte HLS.js": (typeof Hls !== 'undefined' && Hls.isSupported()) ? "✅ Sim" : "❌ Não",
-        "HLS Nativo": document.createElement('video').canPlayType('application/vnd.apple.mpegurl') ? "✅ Sim" : "❌ Não",
-        "Suporte MSE": !!window.MediaSource ? "✅ Sim" : "❌ Não",
+        "Profundidade Cor": window.screen.colorDepth + " bits",
+        "Suporte HLS.js": (typeof Hls !== 'undefined' && Hls.isSupported()) ? "Sim" : "Nao",
+        "HLS Nativo": document.createElement('video').canPlayType('application/vnd.apple.mpegurl') ? "Sim" : "Nao",
+        "Suporte MSE": !!window.MediaSource ? "Sim" : "Nao",
 
         "--- REDE E NAVEGADOR ---": "",
-        "Tipo Conexão": navigator.connection ? navigator.connection.effectiveType : "N/A",
-        "Velocidade Est.": navigator.connection ? `${navigator.connection.downlink} Mbps` : "N/A",
-        "Latência (RTT)": navigator.connection ? `${navigator.connection.rtt} ms` : "N/A",
-        "Online": navigator.onLine ? "✅ Sim" : "❌ Não",
+        "Tipo Conexao": navigator.connection ? navigator.connection.effectiveType : "N/A",
+        "Velocidade Est.": navigator.connection ? navigator.connection.downlink + " Mbps" : "N/A",
+        "Latencia (RTT)": navigator.connection ? navigator.connection.rtt + " ms" : "N/A",
+        "Online": navigator.onLine ? "Sim" : "Nao",
         "User Agent": navigator.userAgent
     };
 
-    // 2. Estilização do Painel
-    const debugDiv = document.createElement('div');
+    // 2. Estilizacao do Painel
+    var debugDiv = document.createElement('div');
     debugDiv.id = 'full-debug-panel';
-    debugDiv.style.cssText = `
-        position: fixed; top: 0; right: 0; width: 350px; height: 100vh;
-        background: rgba(0, 0, 0, 0.92); color: #00ff00; 
-        font-family: 'Consolas', monospace; font-size: 10px; 
-        padding: 15px; z-index: 100000; border-left: 2px solid #00ff00;
-        overflow-y: auto; box-shadow: -5px 0 15px rgba(0,0,0,0.5);
-    `;
+    debugDiv.style.cssText = 'position: fixed; top: 0; right: 0; width: 350px; height: 100vh; ' +
+        'background: rgba(0, 0, 0, 0.92); color: #00ff00; ' +
+        'font-family: "Consolas", monospace; font-size: 10px; ' +
+        'padding: 15px; z-index: 100000; border-left: 2px solid #00ff00; ' +
+        'overflow-y: auto; box-shadow: -5px 0 15px rgba(0,0,0,0.5);';
 
     // 3. Montagem do HTML
-    let html = '<h3 style="color:#fff; border-bottom:1px solid #333; padding-bottom:5px;">DEBUG MASTER</h3>';
-    for (const key in info) {
-        if (key.startsWith("---")) {
-            html += `<div style="color:#ffcc00; margin-top:10px; font-weight:bold;">${key}</div>`;
+    var html = '<h3 style="color:#fff; border-bottom:1px solid #333; padding-bottom:5px;">DEBUG MASTER</h3>';
+    for (var key in info) {
+        if (key.indexOf("---") === 0) {
+            html += '<div style="color:#ffcc00; margin-top:10px; font-weight:bold;">' + key + '</div>';
         } else {
-            html += `<div style="display:flex; justify-content:space-between; margin-bottom:3px; border-bottom:1px solid #111;">
-                        <span style="color:#aaa;">${key}:</span>
-                        <span style="text-align:right; word-break:break-all; margin-left:10px;">${info[key]}</span>
-                     </div>`;
+            html += '<div style="display:flex; justify-content:space-between; margin-bottom:3px; border-bottom:1px solid #111;">' +
+                        '<span style="color:#aaa;">' + key + ':</span>' +
+                        '<span style="text-align:right; word-break:break-all; margin-left:10px;">' + info[key] + '</span>' +
+                     '</div>';
         }
     }
     
-    // 4. Botão de fechar
-    html += `<button onclick="this.parentElement.remove()" style="margin-top:20px; background:#f00; color:#fff; border:none; padding:5px; cursor:pointer; width:100%;">FECHAR DEBUG</button>`;
+    // 4. Botao de fechar
+    html += '<button id="close-debug-btn" style="margin-top:20px; background:#f00; color:#fff; border:none; padding:5px; cursor:pointer; width:100%;">FECHAR DEBUG</button>';
 
     debugDiv.innerHTML = html;
     document.body.appendChild(debugDiv);
+
+    // Listener para o botao de fechar (substituindo o onclick inline para maior seguranca)
+    document.getElementById('close-debug-btn').addEventListener('click', function() {
+        var el = document.getElementById('full-debug-panel');
+        if (el) el.parentElement.removeChild(el);
+    });
 }
 
 window.addEventListener('load', showFullDebugInfo);
