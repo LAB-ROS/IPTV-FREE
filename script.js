@@ -668,14 +668,32 @@
   /**
    * Move o foco entre os elementos navegaveis usando as setas.</n   * @param {number} delta Incremento de posicao (+1 ou -1).
    */
-  function moveFocus(delta) {
+  function moveFocus(delta, minIndex, maxIndex) {
     if (focusables.length === 0) { return; }
+    var lo = (typeof minIndex === "number") ? minIndex : 0;
+    var hi = (typeof maxIndex === "number") ? maxIndex : (focusables.length - 1);
     focusIndex = focusIndex + delta;
-    if (focusIndex < 0) { focusIndex = 0; }
-    if (focusIndex >= focusables.length) { focusIndex = focusables.length - 1; }
+    if (focusIndex < lo) { focusIndex = lo; }
+    if (focusIndex > hi) { focusIndex = hi; }
     applyFocusClass();
     var el = focusables[focusIndex];
     if (el && el.scrollIntoView) { el.scrollIntoView({ block: "nearest" }); }
+  }
+
+  /**
+   * Retorna [primeiroIndice, ultimoIndice] dos itens de canal dentro de
+   * `focusables`, para limitar os saltos de pagina (setas esquerda/direita)
+   * a essa faixa e nao invadir os botoes do topo.
+   */
+  function getChannelFocusRange() {
+    var first = -1, last = -1;
+    for (var i = 0; i < focusables.length; i++) {
+      if (focusables[i].hasAttribute && focusables[i].hasAttribute("data-index")) {
+        if (first === -1) { first = i; }
+        last = i;
+      }
+    }
+    return [first, last];
   }
 
   /**
@@ -703,7 +721,28 @@
   var KEY_LEFT = [37];
   var KEY_RIGHT = [39];
   var KEY_OK = [13];
-  var KEY_BACK = [8, 27, 10009, 461]; // backspace, esc, samsung back, lg back
+  // backspace, esc, samsung back, lg back, 4 (comum em back de Android TV -- mantido
+  // como fallback inofensivo, mas TVs Multilaser com SO Linux proprio (nao Android TV)
+  // costumam usar codigos diferentes; use o modo ?debug=1 abaixo para descobrir o real)
+  var KEY_BACK = [8, 27, 10009, 461, 4];
+
+  // Quantidade de posicoes que as setas esquerda/direita pulam quando o foco
+  // esta sobre um item da lista de canais (navegacao rapida em listas grandes).
+  var PAGE_JUMP = 10;
+
+  // ---------- Modo de depuracao de teclas (?debug=1 na URL) ----------
+  // Os keyCodes reais do controle variam por modelo de Smart TV. Se algum botao
+  // nao estiver respondendo como esperado (ex.: Voltar na TV Multilaser), abra
+  // o player com "?debug=1" no final da URL, aperte o botao na TV e o codigo
+  // aparecera na tela de status -- ai e so adicionar esse numero no array
+  // correspondente (KEY_BACK, KEY_LEFT, etc.) acima.
+  var DEBUG_KEYS = /[?&]debug=1/.test(window.location.search);
+  if (DEBUG_KEYS) {
+    document.addEventListener("keydown", function (e) {
+      var code = e.keyCode || e.which;
+      setStatus("[debug] Tecla pressionada -- keyCode: " + code + " (key: " + (e.key || "?") + ")");
+    });
+  }
 
   document.addEventListener("keydown", function (e) {
     var code = e.keyCode || e.which;
@@ -720,10 +759,22 @@
     var active = document.activeElement;
     var isTyping = active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA");
 
+    // O foco esta sobre um item de canal (tem data-index)? So nesse caso as
+    // setas esquerda/direita fazem sentido como "salto" de N canais.
+    var focusedIsChannel = !isTyping && active && active.hasAttribute && active.hasAttribute("data-index");
+
     if (KEY_DOWN.indexOf(code) !== -1 && !isTyping) {
       e.preventDefault(); moveFocus(1);
     } else if (KEY_UP.indexOf(code) !== -1 && !isTyping) {
       e.preventDefault(); moveFocus(-1);
+    } else if (KEY_RIGHT.indexOf(code) !== -1 && focusedIsChannel) {
+      e.preventDefault();
+      var rangeR = getChannelFocusRange();
+      moveFocus(PAGE_JUMP, rangeR[0], rangeR[1]);
+    } else if (KEY_LEFT.indexOf(code) !== -1 && focusedIsChannel) {
+      e.preventDefault();
+      var rangeL = getChannelFocusRange();
+      moveFocus(-PAGE_JUMP, rangeL[0], rangeL[1]);
     } else if (KEY_OK.indexOf(code) !== -1 && !isTyping) {
       e.preventDefault(); activateFocused();
     } else if (KEY_DOWN.indexOf(code) !== -1 && isTyping && active.tagName === "INPUT") {
