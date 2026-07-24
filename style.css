@@ -109,19 +109,26 @@
     border-radius: 10px;
   }
   #channelListWrap h2 {
-    margin-bottom: 12px;
-  }
-  #channelListWrap h2 {
     font-size: 24px;
     margin-bottom: 12px;
     color: #ffffff;
   }
+  .channel-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr);
+    gap: 20px;
+    align-items: start;
+  }
+  .channel-list-column {
+    min-width: 0;
+  }
   #channelList {
     list-style: none;
-    max-height: 55vh;
+    max-height: 46vh;
     overflow-y: auto;
     border: 2px solid #333;
     border-radius: 6px;
+    background: rgba(10, 10, 10, 0.45);
   }
   #channelList li {
     font-size: 22px;
@@ -135,6 +142,63 @@
     background: #2b6cb0;
     color: #ffffff;
     outline: 3px solid #ffd166;
+  }
+  .mini-player-panel {
+    min-height: 280px;
+    border: 2px solid #333;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #111827, #1f2937);
+    padding: 14px;
+  }
+  .mini-player-error {
+    margin-top: 10px;
+    min-height: 24px;
+    font-size: 16px;
+    line-height: 1.35;
+    color: #fca5a5;
+  }
+  .mini-player-frame {
+    width: 100%;
+    height: 100%;
+    min-height: 250px;
+    border: 2px solid #4b5563;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  #miniVideo {
+    display: none;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 6px;
+    background: #000;
+  }
+  .mini-player-frame.is-preview #miniVideo {
+    display: block;
+  }
+  .mini-player-frame.is-preview .mini-player-placeholder {
+    display: none;
+  }
+  .mini-player-placeholder {
+    text-align: center;
+    color: #d1d5db;
+  }
+  .mini-player-title {
+    font-size: 22px;
+    font-weight: bold;
+    color: #ffffff;
+    margin-bottom: 8px;
+  }
+  .mini-player-text {
+    font-size: 18px;
+    line-height: 1.4;
+    color: #b3b3b3;
   }
   #status {
     margin-top: 16px;

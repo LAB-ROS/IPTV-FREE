@@ -13,7 +13,12 @@
   var letterBarEl = document.getElementById("letterBar");
   var osd = document.getElementById("osd");
   var helpBar = document.getElementById("helpBar");
+  var miniVideo = document.getElementById("miniVideo");
+  var miniPlayerFrame = document.querySelector(".mini-player-frame");
+  var miniPlayerError = document.getElementById("miniPlayerError");
   var hlsInstance = null;
+  var miniHlsInstance = null;
+  var miniVideoErrorHandler = null;
   var currentFilterLetter = null; // null = "Todos"; senao "A".."Z", "0-9" ou "#"
 
   /**
@@ -137,6 +142,134 @@
    * Renderiza a lista de canais filtrada de acordo com a letra selecionada.
    * Também atualiza a barra de letras antes de mostrar os canais.
    */
+  function showMiniPreviewPlaceholder() {
+    if (!miniPlayerFrame) { return; }
+    miniPlayerFrame.classList.remove("is-preview");
+    var titleEl = miniPlayerFrame.querySelector(".mini-player-title");
+    var textEl = miniPlayerFrame.querySelector(".mini-player-text");
+    if (titleEl) { titleEl.textContent = "Mini player"; }
+    if (textEl) { textEl.textContent = "Selecione um canal para ver a pré-visualização."; }
+  }
+
+  function showMiniPlayerError(msg) {
+    if (!miniPlayerError) { return; }
+    miniPlayerError.textContent = msg || "";
+  }
+
+  function attachMiniPreviewErrorHandling(videoEl) {
+    if (!videoEl) { return; }
+    if (miniVideoErrorHandler) {
+      videoEl.removeEventListener("error", miniVideoErrorHandler);
+    }
+    miniVideoErrorHandler = function () {
+      showMiniPlayerError("Este canal não abriu no mini player. O servidor pode estar indisponível, bloqueado ou com formato incompatível.");
+    };
+    videoEl.addEventListener("error", miniVideoErrorHandler);
+    videoEl.addEventListener("loadeddata", function () {
+      showMiniPlayerError("");
+    });
+  }
+
+  function stopMiniPreview() {
+    if (miniHlsInstance) {
+      try { miniHlsInstance.destroy(); } catch (e) {}
+      miniHlsInstance = null;
+    }
+    if (miniVideo) {
+      try { miniVideo.pause(); } catch (e) {}
+      miniVideo.removeAttribute("src");
+      miniVideo.load();
+    }
+  }
+
+  function safePlayElement(videoEl) {
+    var p;
+    try { p = videoEl.play(); } catch (e) { p = null; }
+    if (p && typeof p.then === "function") {
+      p.catch(function () {
+        if (!videoEl.muted) {
+          videoEl.muted = true;
+          var retry = videoEl.play();
+          if (retry && retry.catch) {
+            retry.catch(function () {});
+          }
+        }
+      });
+    }
+  }
+
+  function tryHlsJsForElement(videoEl, url) {
+    ensureHlsJsLoaded(function (ok) {
+      if (ok && window.Hls && window.Hls.isSupported && window.Hls.isSupported()) {
+        miniHlsInstance = new window.Hls();
+        miniHlsInstance.on(window.Hls.Events.ERROR, function (event, data) {
+          if (data && data.fatal) {
+            showMiniPlayerError("Este canal não abriu no mini player. O servidor pode estar indisponível, bloqueado ou com formato incompatível.");
+          }
+        });
+        miniHlsInstance.loadSource(url);
+        miniHlsInstance.attachMedia(videoEl);
+        safePlayElement(videoEl);
+      } else {
+        showMiniPreviewPlaceholder();
+        showMiniPlayerError("Este canal não abriu no mini player. O servidor pode estar indisponível, bloqueado ou com formato incompatível.");
+      }
+    });
+  }
+
+  function startMiniPreview(url) {
+    showMiniPlayerError("");
+    if (!miniVideo || !url) {
+      showMiniPreviewPlaceholder();
+      return;
+    }
+
+    stopMiniPreview();
+    if (miniPlayerFrame) { miniPlayerFrame.classList.add("is-preview"); }
+    attachMiniPreviewErrorHandling(miniVideo);
+
+    var cleanUrl = url.split("?")[0];
+    var ext = cleanUrl.substring(cleanUrl.lastIndexOf(".") + 1).toLowerCase();
+    var directExts = ["mp4", "webm", "ogg", "ogv", "mov", "mkv"];
+
+    if (directExts.indexOf(ext) !== -1) {
+      miniVideo.muted = true;
+      miniVideo.src = url;
+      safePlayElement(miniVideo);
+      return;
+    }
+
+    var canNative = miniVideo.canPlayType("application/vnd.apple.mpegurl") ||
+      miniVideo.canPlayType("application/x-mpegURL");
+    if (!canNative) {
+      tryHlsJsForElement(miniVideo, url);
+      return;
+    }
+
+    miniVideo.muted = true;
+    miniVideo.src = url;
+    safePlayElement(miniVideo);
+  }
+
+  function updateMiniPreview(index) {
+    var panel = document.getElementById("miniPlayerPanel");
+    if (!panel) { return; }
+    var titleEl = panel.querySelector(".mini-player-title");
+    var textEl = panel.querySelector(".mini-player-text");
+    if (!titleEl || !textEl) { return; }
+
+    var ch = channels[index];
+    if (!ch) {
+      showMiniPreviewPlaceholder();
+      showMiniPlayerError("");
+      return;
+    }
+
+    titleEl.textContent = ch.name;
+    textEl.textContent = "Canal selecionado · Pressione OK para reproduzir em tela cheia";
+    startMiniPreview(ch.url);
+  }
+
   function renderChannelList() {
     renderLetterBar();
     channelListEl.innerHTML = "";
@@ -149,7 +282,10 @@
       li.setAttribute("data-index", i);
       li.setAttribute("tabindex", "0");
       (function (idx) {
-        li.addEventListener("click", function () { playChannel(idx); });
+        li.addEventListener("click", function () {
+          updateMiniPreview(idx);
+          playChannel(idx);
+        });
       })(i);
       channelListEl.appendChild(li);
     }
@@ -370,6 +506,7 @@
   function playChannel(index) {
     var ch = channels[index];
     if (!ch) { return; }
+    updateMiniPreview(index);
     setupScreen.style.display = "none";
     playerScreen.style.display = "block";
     helpBar.style.display = "block";
@@ -613,6 +750,7 @@
     video.pause();
     video.removeAttribute("src");
     video.load();
+    stopMiniPreview();
     playerScreen.style.display = "none";
     helpBar.style.display = "none";
     osd.style.display = "none";
@@ -662,6 +800,13 @@
       } else {
         focusables[i].className = focusables[i].className.replace(/\s*focused/, "");
       }
+    }
+
+    var activeEl = focusables[focusIndex];
+    if (activeEl && activeEl.getAttribute("data-index")) {
+      updateMiniPreview(parseInt(activeEl.getAttribute("data-index"), 10));
+    } else {
+      updateMiniPreview(-1);
     }
   }
 

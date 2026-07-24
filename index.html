@@ -34,8 +34,22 @@
     
     <div id="channelListWrap">
       <h2>Canais</h2>
-      <div id="letterBar"></div>
-      <ul id="channelList"></ul>
+      <div class="channel-layout">
+        <div class="channel-list-column">
+          <div id="letterBar"></div>
+          <ul id="channelList"></ul>
+        </div>
+        <div class="mini-player-panel" id="miniPlayerPanel">
+          <div class="mini-player-frame">
+            <video id="miniVideo" playsinline muted autoplay></video>
+            <div class="mini-player-placeholder">
+              <div class="mini-player-title">Mini player</div>
+              <div class="mini-player-text">Selecione um canal para ver a pré-visualização.</div>
+            </div>
+          </div>
+          <div class="mini-player-error" id="miniPlayerError" aria-live="polite"></div>
+        </div>
+      </div>
     </div>
 
     <p class="hint" style="margin-top:-8px;">
