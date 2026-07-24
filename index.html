@@ -80,6 +80,28 @@
     background: #3182ce;
   }
 
+  .letter-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .letter-btn {
+    min-width: 48px;
+    padding: 8px 12px;
+    margin: 0;
+    font-size: 18px;
+  }
+  .letter-btn.active {
+    background: #f59e0b;
+    border-color: #ffd166;
+  }
+  .empty-state {
+    padding: 16px;
+    color: #b3b3b3;
+    font-size: 20px;
+  }
+
   #channelListWrap {
     margin-top: 30px;
   }
@@ -195,6 +217,39 @@ https://exemplo.com/stream.m3u8"></textarea>
 
     <div id="status"></div>
 
+    <div class="row">
+      <label>Filtrar canais por letra</label>
+      <div class="letter-filter">
+        <button class="btn letter-btn" data-letter="" tabindex="0">Todos</button>
+        <button class="btn letter-btn" data-letter="a" tabindex="0">A</button>
+        <button class="btn letter-btn" data-letter="b" tabindex="0">B</button>
+        <button class="btn letter-btn" data-letter="c" tabindex="0">C</button>
+        <button class="btn letter-btn" data-letter="d" tabindex="0">D</button>
+        <button class="btn letter-btn" data-letter="e" tabindex="0">E</button>
+        <button class="btn letter-btn" data-letter="f" tabindex="0">F</button>
+        <button class="btn letter-btn" data-letter="g" tabindex="0">G</button>
+        <button class="btn letter-btn" data-letter="h" tabindex="0">H</button>
+        <button class="btn letter-btn" data-letter="i" tabindex="0">I</button>
+        <button class="btn letter-btn" data-letter="j" tabindex="0">J</button>
+        <button class="btn letter-btn" data-letter="k" tabindex="0">K</button>
+        <button class="btn letter-btn" data-letter="l" tabindex="0">L</button>
+        <button class="btn letter-btn" data-letter="m" tabindex="0">M</button>
+        <button class="btn letter-btn" data-letter="n" tabindex="0">N</button>
+        <button class="btn letter-btn" data-letter="o" tabindex="0">O</button>
+        <button class="btn letter-btn" data-letter="p" tabindex="0">P</button>
+        <button class="btn letter-btn" data-letter="q" tabindex="0">Q</button>
+        <button class="btn letter-btn" data-letter="r" tabindex="0">R</button>
+        <button class="btn letter-btn" data-letter="s" tabindex="0">S</button>
+        <button class="btn letter-btn" data-letter="t" tabindex="0">T</button>
+        <button class="btn letter-btn" data-letter="u" tabindex="0">U</button>
+        <button class="btn letter-btn" data-letter="v" tabindex="0">V</button>
+        <button class="btn letter-btn" data-letter="w" tabindex="0">W</button>
+        <button class="btn letter-btn" data-letter="x" tabindex="0">X</button>
+        <button class="btn letter-btn" data-letter="y" tabindex="0">Y</button>
+        <button class="btn letter-btn" data-letter="z" tabindex="0">Z</button>
+      </div>
+    </div>
+
     <div id="channelListWrap">
       <h2>Canais</h2>
       <ul id="channelList"></ul>
@@ -216,6 +271,8 @@ https://exemplo.com/stream.m3u8"></textarea>
 
   var STORAGE_KEY = "iptv_player_playlist_url";
   var channels = [];
+  var filteredChannels = [];
+  var activeLetter = "";
   var focusIndex = -1;
   var focusables = []; // elementos focaveis na tela atual (setup)
   var video = document.getElementById("video");
@@ -258,17 +315,57 @@ https://exemplo.com/stream.m3u8"></textarea>
     return list;
   }
 
+  function updateLetterButtons() {
+    var buttons = document.querySelectorAll(".letter-btn");
+    for (var i = 0; i < buttons.length; i++) {
+      var btn = buttons[i];
+      var letter = (btn.getAttribute("data-letter") || "").toLowerCase();
+      btn.className = btn.className.replace(/\s*active/, "");
+      if (letter === activeLetter) {
+        btn.className += " active";
+      }
+    }
+  }
+
+  function applyLetterFilter(letter) {
+    activeLetter = (letter || "").toLowerCase();
+    filteredChannels = [];
+    if (!activeLetter) {
+      filteredChannels = channels.slice();
+    } else {
+      for (var i = 0; i < channels.length; i++) {
+        var name = (channels[i].name || "").toLowerCase();
+        if (name.charAt(0) === activeLetter) {
+          filteredChannels.push(channels[i]);
+        }
+      }
+    }
+    updateLetterButtons();
+    renderChannelList();
+    if (filteredChannels.length === 0 && channels.length > 0) {
+      setStatus("Nenhum canal encontrado para a letra \"" + activeLetter.toUpperCase() + "\".");
+    }
+  }
+
   function renderChannelList() {
     channelListEl.innerHTML = "";
-    for (var i = 0; i < channels.length; i++) {
-      var li = document.createElement("li");
-      li.textContent = channels[i].name;
-      li.setAttribute("data-index", i);
-      li.setAttribute("tabindex", "0");
-      (function (idx) {
-        li.addEventListener("click", function () { playChannel(idx); });
-      })(i);
-      channelListEl.appendChild(li);
+    var visibleChannels = activeLetter ? filteredChannels : channels;
+    if (activeLetter && visibleChannels.length === 0) {
+      var emptyLi = document.createElement("li");
+      emptyLi.className = "empty-state";
+      emptyLi.textContent = "Nenhum canal encontrado para a letra \"" + activeLetter.toUpperCase() + "\".";
+      channelListEl.appendChild(emptyLi);
+    } else {
+      for (var i = 0; i < visibleChannels.length; i++) {
+        var li = document.createElement("li");
+        li.textContent = visibleChannels[i].name;
+        li.setAttribute("data-index", i);
+        li.setAttribute("tabindex", "0");
+        (function (idx) {
+          li.addEventListener("click", function () { playChannel(idx); });
+        })(i);
+        channelListEl.appendChild(li);
+      }
     }
     rebuildFocusables();
   }
@@ -363,6 +460,9 @@ https://exemplo.com/stream.m3u8"></textarea>
           var parsed = parseM3U(xhr.responseText);
           var filtered = filterBlockedChannels(parsed);
           channels = filtered.kept;
+          activeLetter = "";
+          filteredChannels = channels.slice();
+          updateLetterButtons();
           if (channels.length === 0 && filtered.skipped === 0) {
             setStatus("Nenhum canal encontrado nessa playlist.");
           } else {
@@ -412,6 +512,9 @@ https://exemplo.com/stream.m3u8"></textarea>
     var parsed = parseM3U(text);
     var filtered = filterBlockedChannels(parsed);
     channels = filtered.kept;
+    activeLetter = "";
+    filteredChannels = channels.slice();
+    updateLetterButtons();
     if (channels.length === 0 && filtered.skipped === 0) {
       setStatus("Nenhum canal reconhecido no texto colado.");
     } else {
@@ -437,7 +540,8 @@ https://exemplo.com/stream.m3u8"></textarea>
 
   // ---------- Reproducao ----------
   function playChannel(index) {
-    var ch = channels[index];
+    var visibleChannels = activeLetter ? filteredChannels : channels;
+    var ch = visibleChannels[index];
     if (!ch) { return; }
     setupScreen.style.display = "none";
     playerScreen.style.display = "block";
@@ -754,6 +858,13 @@ https://exemplo.com/stream.m3u8"></textarea>
 
   document.getElementById("btnDemo").addEventListener("click", loadDemo);
 
+  var filterButtons = document.querySelectorAll(".letter-btn");
+  for (var i = 0; i < filterButtons.length; i++) {
+    filterButtons[i].addEventListener("click", function () {
+      applyLetterFilter(this.getAttribute("data-letter"));
+    });
+  }
+
   // Pre-carrega hls.js em segundo plano (nao bloqueia a pagina); quando o usuario
   // selecionar um canal, tryNativeThenFallback/tryHlsJs vao reaproveitar esse carregamento.
   if (window.MediaSource) {
@@ -774,6 +885,7 @@ https://exemplo.com/stream.m3u8"></textarea>
   // Carrega automaticamente ao abrir a pagina
   loadFromUrl(initialUrl);
 
+  updateLetterButtons();
   rebuildFocusables();
 })();
 </script>
