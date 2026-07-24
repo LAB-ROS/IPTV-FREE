@@ -172,43 +172,6 @@
 
   <!-- TELA DE CONFIGURACAO / LISTA DE CANAIS -->
   <div id="setup">
-    <h1>IPTV Player para Smart TV</h1>
-    <p class="hint">
-      Este player ja carrega automaticamente uma lista publica de canais (iptv-org) ao abrir.
-      Se preferir, cole abaixo o endereco (URL) da sua propria playlist M3U/M3U8, ou cole o conteudo M3U diretamente.
-      Use as setas do controle remoto para navegar e OK/Enter para selecionar.
-    </p>
-
-    <div class="row">
-      <label for="playlistUrl">URL da playlist M3U (.m3u / .m3u8)</label>
-      <input type="text" id="playlistUrl" placeholder="https://iptv-org.github.io/iptv/index.m3u" />
-    </div>
-
-    <div class="row">
-      <button class="btn" id="btnLoadUrl" tabindex="0">Carregar por URL (lista M3U)</button>
-      <button class="btn" id="btnAddSingle" tabindex="0">Adicionar como canal único</button>
-      <button class="btn" id="btnPasteToggle" tabindex="0">Colar lista manualmente</button>
-      <button class="btn" id="btnDemo" tabindex="0">Carregar lista de exemplo</button>
-    </div>
-    <p class="hint" style="margin-top:-8px;">
-      Use "Carregar por URL" quando o link aponta para um arquivo de lista com varios canais.
-      Use "Adicionar como canal único" quando o link e o proprio stream de video (ex.: encurtadores como jmp2.uk,
-      ou uma URL .m3u8/.mp4 de um unico canal) — nesse caso o navegador nao precisa ler o conteudo, so reproduzir.
-      Obs.: cada servidor decide se libera ou nao a leitura via navegador (CORS); por isso alguns links funcionam
-      direto com "Carregar por URL" e outros so funcionam como "canal único" (o player ja tenta isso automaticamente
-      quando detecta o bloqueio).
-    </p>
-
-    <div class="row" id="pasteRow" style="display:none;">
-      <label for="playlistText">Cole aqui o conteudo da playlist M3U</label>
-      <textarea id="playlistText" placeholder="#EXTM3U
-#EXTINF:-1,Canal Exemplo
-https://exemplo.com/stream.m3u8"></textarea>
-      <button class="btn" id="btnLoadText" tabindex="0" style="margin-top:10px;">Carregar texto colado</button>
-    </div>
-
-    <div id="status"></div>
-
     <div class="row">
       <label>Filtrar canais por letra</label>
       <div class="letter-filter">
@@ -242,9 +205,46 @@ https://exemplo.com/stream.m3u8"></textarea>
       </div>
     </div>
 
+    <div id="status"></div>
+
     <div id="channelListWrap">
       <h2>Canais</h2>
       <ul id="channelList"></ul>
+    </div>
+
+    <h1>IPTV Player para Smart TV</h1>
+    <p class="hint">
+      Este player ja carrega automaticamente uma lista publica de canais (iptv-org) ao abrir.
+      Se preferir, cole abaixo o endereco (URL) da sua propria playlist M3U/M3U8, ou cole o conteudo M3U diretamente.
+      Use as setas do controle remoto para navegar e OK/Enter para selecionar.
+    </p>
+
+    <div class="row">
+      <label for="playlistUrl">URL da playlist M3U (.m3u / .m3u8)</label>
+      <input type="text" id="playlistUrl" placeholder="https://iptv-org.github.io/iptv/index.m3u" />
+    </div>
+
+    <div class="row">
+      <button class="btn" id="btnLoadUrl" tabindex="0">Carregar por URL (lista M3U)</button>
+      <button class="btn" id="btnAddSingle" tabindex="0">Adicionar como canal único</button>
+      <button class="btn" id="btnPasteToggle" tabindex="0">Colar lista manualmente</button>
+      <button class="btn" id="btnDemo" tabindex="0">Carregar lista de exemplo</button>
+    </div>
+    <p class="hint" style="margin-top:-8px;">
+      Use "Carregar por URL" quando o link aponta para um arquivo de lista com varios canais.
+      Use "Adicionar como canal único" quando o link e o proprio stream de video (ex.: encurtadores como jmp2.uk,
+      ou uma URL .m3u8/.mp4 de um unico canal) — nesse caso o navegador nao precisa ler o conteudo, so reproduzir.
+      Obs.: cada servidor decide se libera ou nao a leitura via navegador (CORS); por isso alguns links funcionam
+      direto com "Carregar por URL" e outros so funcionam como "canal único" (o player ja tenta isso automaticamente
+      quando detecta o bloqueio).
+    </p>
+
+    <div class="row" id="pasteRow" style="display:none;">
+      <label for="playlistText">Cole aqui o conteudo da playlist M3U</label>
+      <textarea id="playlistText" placeholder="#EXTM3U
+#EXTINF:-1,Canal Exemplo
+https://exemplo.com/stream.m3u8"></textarea>
+      <button class="btn" id="btnLoadText" tabindex="0" style="margin-top:10px;">Carregar texto colado</button>
     </div>
   </div>
 
