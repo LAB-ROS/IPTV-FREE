@@ -1,0 +1,172 @@
+  /* CSS bem simples, sem flexbox avancado nem grid, para maxima compatibilidade */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: #0a0a0a;
+    color: #f2f2f2;
+    font-family: Arial, Helvetica, sans-serif;
+    overflow: hidden;
+  }
+  #app {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+
+  /* Tela de configuracao (lista de canais + carregar playlist) */
+  #setup {
+    width: 100%;
+    height: 100%;
+    padding: 40px;
+    overflow-y: auto;
+  }
+  #setup h1 {
+    font-size: 34px;
+    margin-bottom: 20px;
+    color: #ffffff;
+  }
+  #setup .hint {
+    font-size: 18px;
+    color: #b3b3b3;
+    margin-bottom: 20px;
+    line-height: 1.4;
+  }
+  .row {
+    margin-bottom: 20px;
+  }
+  .row label {
+    display: block;
+    font-size: 20px;
+    margin-bottom: 8px;
+    color: #dddddd;
+  }
+  .row input[type="text"], .row textarea {
+    width: 100%;
+    font-size: 20px;
+    padding: 12px;
+    border: 3px solid #444;
+    border-radius: 6px;
+    background: #1a1a1a;
+    color: #fff;
+  }
+  .row textarea {
+    height: 120px;
+    resize: none;
+    font-family: monospace;
+  }
+  .btn {
+    display: inline-block;
+    font-size: 20px;
+    padding: 12px 28px;
+    background: #2b6cb0;
+    color: #fff;
+    border: 3px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-right: 12px;
+    margin-top: 6px;
+  }
+  .btn:focus, .btn.focused {
+    border-color: #ffd166;
+    outline: none;
+    background: #3182ce;
+  }
+
+  #letterBar, .letter-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+    margin-bottom: 14px;
+  }
+  .letter-btn {
+    min-width: 48px;
+    padding: 8px 12px;
+    margin: 0;
+    font-size: 18px;
+    background: #2b6cb0;
+    border: 2px solid transparent;
+    border-radius: 6px;
+  }
+  .letter-btn.letter-active,
+  .letter-btn.active {
+    background: #f59e0b;
+    border-color: #ffd166;
+    color: #111;
+  }
+  .empty-state {
+    padding: 16px;
+    color: #b3b3b3;
+    font-size: 20px;
+  }
+
+  #channelListWrap {
+    margin-bottom: 30px;
+    background: rgba(15, 23, 42, 0.95);
+    padding: 18px;
+    border: 2px solid #1f2937;
+    border-radius: 10px;
+  }
+  #channelListWrap h2 {
+    margin-bottom: 12px;
+  }
+  #channelListWrap h2 {
+    font-size: 24px;
+    margin-bottom: 12px;
+    color: #ffffff;
+  }
+  #channelList {
+    list-style: none;
+    max-height: 55vh;
+    overflow-y: auto;
+    border: 2px solid #333;
+    border-radius: 6px;
+  }
+  #channelList li {
+    font-size: 22px;
+    padding: 14px 18px;
+    border-bottom: 1px solid #262626;
+    color: #e6e6e6;
+    cursor: pointer;
+  }
+  #channelList li:last-child { border-bottom: none; }
+  #channelList li.focused {
+    background: #2b6cb0;
+    color: #ffffff;
+    outline: 3px solid #ffd166;
+  }
+  #status {
+    margin-top: 16px;
+    font-size: 18px;
+    color: #ffb347;
+    min-height: 24px;
+  }
+
+  /* Tela do player */
+  #playerScreen {
+    width: 100%;
+    height: 100%;
+    display: none;
+    background: #000;
+    position: relative;
+  }
+  #video {
+    width: 100%;
+    height: 100%;
+    background: #000;
+  }
+  #osd {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    padding: 18px 30px;
+    background: rgba(0,0,0,0.65);
+    font-size: 22px;
+    color: #fff;
+    display: none;
+  }
+  #helpBar {
+    display: none;
+  }
