@@ -363,6 +363,8 @@
   }
 
   // ---------- Reproducao ----------
+  var currentChannelIndex = -1;
+
   /**
    * Alterna da tela de lista para a tela de player e inicia reproducao do canal selecionado.
    * @param {number} index Indice do canal na lista `channels`.
@@ -370,11 +372,41 @@
   function playChannel(index) {
     var ch = channels[index];
     if (!ch) { return; }
+    currentChannelIndex = index;
     setupScreen.style.display = "none";
     playerScreen.style.display = "block";
     helpBar.style.display = "block";
     showOsd(ch.name);
     startPlayback(ch.url);
+  }
+
+  /**
+   * Troca para o proximo/anterior canal da lista completa, sem sair da tela de player.
+   * @param {number} delta +1 para o proximo canal, -1 para o anterior.
+   */
+  function changeChannel(delta) {
+    if (channels.length === 0 || currentChannelIndex === -1) { return; }
+    var newIndex = currentChannelIndex + delta;
+    if (newIndex < 0) { newIndex = 0; }
+    if (newIndex > channels.length - 1) { newIndex = channels.length - 1; }
+    if (newIndex === currentChannelIndex) { return; }
+    playChannel(newIndex);
+  }
+
+  var VOLUME_STEP = 0.1;
+
+  /**
+   * Ajusta o volume do video em incrementos, exibindo o novo nivel no OSD.
+   * @param {number} delta Variacao do volume, de -1 a 1 (ex.: +-0.1).
+   */
+  function changeVolume(delta) {
+    var vol = video.volume;
+    if (video.muted) { video.muted = false; vol = 0; }
+    vol = vol + delta;
+    if (vol < 0) { vol = 0; }
+    if (vol > 1) { vol = 1; }
+    video.volume = vol;
+    showOsd("Volume: " + Math.round(vol * 100) + "%");
   }
 
   /**
@@ -751,8 +783,20 @@
       if (KEY_BACK.indexOf(code) !== -1) {
         e.preventDefault();
         backToList();
+      } else if (KEY_UP.indexOf(code) !== -1) {
+        e.preventDefault();
+        changeChannel(-1);
+      } else if (KEY_DOWN.indexOf(code) !== -1) {
+        e.preventDefault();
+        changeChannel(1);
+      } else if (KEY_RIGHT.indexOf(code) !== -1) {
+        e.preventDefault();
+        changeVolume(VOLUME_STEP);
+      } else if (KEY_LEFT.indexOf(code) !== -1) {
+        e.preventDefault();
+        changeVolume(-VOLUME_STEP);
       }
-      return; // demais teclas (setas p/ volume, OK p/ play/pause) ficam a cargo dos controles nativos do <video controls>
+      return; // demais teclas (ex.: OK p/ play/pause) ficam a cargo dos controles nativos do <video controls>
     }
 
     // Se o foco atual for um campo de texto, nao interceptamos setas/Enter (para permitir digitacao)
