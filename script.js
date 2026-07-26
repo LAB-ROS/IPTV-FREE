@@ -27,21 +27,27 @@
   // ---------- Parser de M3U simples (sem dependencias) ----------
   /**
    * Converte o texto de uma playlist M3U em um array de canais.
-   * Suporta apenas a tag #EXTINF e ignora outras tags.
+   * Extrai nome, URL e logo (tvg-logo) de cada canal.
    * @param {string} text Conteudo M3U completo.
-   * @returns {Array<{name:string,url:string}>} Lista de canais.
+   * @returns {Array<{name:string,url:string,logo:string}>} Lista de canais com logo.
    */
   function parseM3U(text) {
     var lines = text.split(/\r?\n/);
     var list = [];
     var currentName = null;
+    var currentLogo = null;
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i];
       if (!line) { continue; }
       line = line.replace(/^\s+|\s+$/g, "");
       if (line.indexOf("#EXTINF") === 0) {
+        // Extrai o nome (após a última vírgula)
         var commaIdx = line.lastIndexOf(",");
         currentName = commaIdx >= 0 ? line.substring(commaIdx + 1) : "Canal";
+        
+        // Extrai a logo (tvg-logo="URL")
+        var logoMatch = line.match(/tvg-logo="([^"]+)"/);
+        currentLogo = logoMatch ? logoMatch[1] : null;
       } else if (line.indexOf("#") === 0) {
         // outras tags M3U (ignoradas)
         continue;
@@ -49,9 +55,11 @@
         // linha de URL
         list.push({
           name: currentName || line,
-          url: line
+          url: line,
+          logo: currentLogo
         });
         currentName = null;
+        currentLogo = null;
       }
     }
     return list;
@@ -134,26 +142,53 @@
   }
 
   /**
+   * Atualiza a exibição da logo do canal na coluna ao lado.
+   * @param {number} index Índice do canal na lista `channels`.
+   */
+  function updateChannelLogo(index) {
+    var ch = channels[index];
+    if (!ch) { return; }
+    var logoImg = document.getElementById("logoImage");
+    var logoPlaceholder = document.getElementById("logoPlaceholder");
+    if (ch.logo) {
+      logoImg.src = ch.logo;
+      logoImg.style.display = "block";
+      logoPlaceholder.style.display = "none";
+    } else {
+      logoImg.style.display = "none";
+      logoPlaceholder.textContent = ch.name + " (sem logo)";
+      logoPlaceholder.style.display = "block";
+    }
+  }
+
+  /**
    * Renderiza a lista de canais filtrada de acordo com a letra selecionada.
    * Também atualiza a barra de letras antes de mostrar os canais.
    */
   function renderChannelList() {
     renderLetterBar();
     channelListEl.innerHTML = "";
+    var firstFilteredIndex = -1;
     for (var i = 0; i < channels.length; i++) {
       if (currentFilterLetter !== null && getLetterGroup(channels[i].name) !== currentFilterLetter) {
         continue;
       }
+      if (firstFilteredIndex === -1) { firstFilteredIndex = i; }
       var li = document.createElement("li");
       li.textContent = channels[i].name;
       li.setAttribute("data-index", i);
       li.setAttribute("tabindex", "0");
       (function (idx) {
         li.addEventListener("click", function () { playChannel(idx); });
+        li.addEventListener("focus", function () { updateChannelLogo(idx); });
+        li.addEventListener("mouseover", function () { updateChannelLogo(idx); });
       })(i);
       channelListEl.appendChild(li);
     }
     rebuildFocusables();
+    if (firstFilteredIndex !== -1) {
+      updateChannelLogo(firstFilteredIndex);
+    }
   }
 
   // Dominios de servicos de streaming licenciados/comerciais que bloqueiam explicitamente
@@ -245,6 +280,7 @@
   function resetFilterForNewList() {
     var letters = computeLetterGroups(channels);
     currentFilterLetter = letters.length > 0 ? letters[0] : null;
+    selectLetter(currentFilterLetter);
   }
 
   /**

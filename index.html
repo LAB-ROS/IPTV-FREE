@@ -14,10 +14,23 @@
   <div id="setup">
     <h1>IPTV FREE TV</h1>
 
-    <div id="channelListWrap">
-      <h2>Canais</h2>
-      <div id="letterBar"></div>
-      <ul id="channelList"></ul>
+    <div class="channels-container">
+      <!-- Coluna esquerda: Lista de canais -->
+      <div class="channels-column-left">
+        <div id="channelListWrap">
+          <h2>Canais</h2>
+          <div id="letterBar"></div>
+          <ul id="channelList"></ul>
+        </div>
+      </div>
+
+      <!-- Coluna direita: Logo do canal -->
+      <div class="channels-column-right">
+        <div id="channelLogo">
+          <img id="logoImage" src="" alt="Logo do canal" style="display:none;" />
+          <p id="logoPlaceholder">Selecione um canal para ver a logo</p>
+        </div>
+      </div>
     </div>
 
     <p class="hint">

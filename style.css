@@ -102,7 +102,7 @@
   }
 
   #channelListWrap {
-    margin-bottom: 30px;
+    margin-bottom: 0;
     background: rgba(15, 23, 42, 0.95);
     padding: 18px;
     border: 2px solid #1f2937;
@@ -169,4 +169,58 @@
   }
   #helpBar {
     display: none;
+  }
+
+  /* Layout de colunas: Lista + Logo (compatível com navegadores antigos) */
+  .channels-container {
+    width: 100%;
+    overflow: hidden; /* Clearfix para floats */
+    margin-bottom: 30px;
+  }
+
+  .channels-column-left {
+    float: left;
+    width: 62%;
+    margin-right: 3%;
+  }
+
+  .channels-column-right {
+    float: left;
+    width: 35%;
+  }
+
+  /* Logo do canal */
+  #channelLogo {
+    background: rgba(15, 23, 42, 0.95);
+    padding: 20px;
+    border: 2px solid #1f2937;
+    border-radius: 10px;
+    text-align: center;
+    min-height: 300px;
+  }
+
+  #logoImage {
+    max-width: 100%;
+    max-height: 280px;
+    width: auto;
+    height: auto;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  #logoPlaceholder {
+    color: #888;
+    font-size: 16px;
+    text-align: center;
+    padding-top: 130px;
+  }
+
+  /* Fallback para navegadores sem suporte a flexbox */
+  .channels-container::after {
+    content: "";
+    display: table;
+    clear: both;
   }
