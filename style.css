@@ -18,54 +18,69 @@
   #setup {
     width: 100%;
     height: 100%;
-    padding: 40px;
-    overflow-y: auto;
+    padding: 8px 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
   #setup h1 {
-    font-size: 34px;
-    margin-bottom: 20px;
+    font-size: 20px;
+    margin-bottom: 4px;
     color: #ffffff;
+    flex-shrink: 0;
   }
   #setup .hint {
-    font-size: 18px;
+    font-size: 11px;
     color: #b3b3b3;
-    margin-bottom: 20px;
-    line-height: 1.4;
+    margin-bottom: 4px;
+    line-height: 1.2;
+    display: none;
+  }
+  
+  /* Área de controles compacta */
+  #setup > .row:nth-of-type(1),
+  #setup > .row:nth-of-type(2) {
+    flex-shrink: 0;
+  }
+  
+  #setup > .row:nth-of-type(2) {
+    margin-bottom: 6px;
   }
   .row {
-    margin-bottom: 20px;
+    margin-bottom: 4px;
+    font-size: 12px;
   }
   .row label {
     display: block;
-    font-size: 20px;
-    margin-bottom: 8px;
+    font-size: 12px;
+    margin-bottom: 2px;
     color: #dddddd;
   }
   .row input[type="text"], .row textarea {
     width: 100%;
-    font-size: 20px;
-    padding: 12px;
-    border: 3px solid #444;
-    border-radius: 6px;
+    font-size: 12px;
+    padding: 6px;
+    border: 1px solid #444;
+    border-radius: 3px;
     background: #1a1a1a;
     color: #fff;
   }
   .row textarea {
-    height: 120px;
+    height: 60px;
     resize: none;
     font-family: monospace;
   }
   .btn {
     display: inline-block;
-    font-size: 20px;
-    padding: 12px 28px;
+    font-size: 12px;
+    padding: 6px 12px;
     background: #2b6cb0;
     color: #fff;
-    border: 3px solid transparent;
-    border-radius: 6px;
+    border: 1px solid transparent;
+    border-radius: 3px;
     cursor: pointer;
-    margin-right: 12px;
-    margin-top: 6px;
+    margin-right: 6px;
+    margin-bottom: 4px;
   }
   .btn:focus, .btn.focused {
     border-color: #ffd166;
@@ -76,18 +91,18 @@
   #letterBar, .letter-filter {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 8px;
-    margin-bottom: 14px;
+    gap: 4px;
+    margin-top: 4px;
+    margin-bottom: 8px;
   }
   .letter-btn {
-    min-width: 48px;
-    padding: 8px 12px;
+    min-width: 36px;
+    padding: 4px 8px;
     margin: 0;
-    font-size: 18px;
+    font-size: 12px;
     background: #2b6cb0;
-    border: 2px solid transparent;
-    border-radius: 6px;
+    border: 1px solid transparent;
+    border-radius: 3px;
   }
   .letter-btn.letter-active,
   .letter-btn.active {
@@ -104,28 +119,30 @@
   #channelListWrap {
     margin-bottom: 0;
     background: rgba(15, 23, 42, 0.95);
-    padding: 18px;
-    border: 2px solid #1f2937;
-    border-radius: 10px;
+    padding: 10px;
+    border: 1px solid #1f2937;
+    border-radius: 6px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
   #channelListWrap h2 {
-    margin-bottom: 12px;
-  }
-  #channelListWrap h2 {
-    font-size: 24px;
-    margin-bottom: 12px;
+    font-size: 16px;
+    margin-bottom: 6px;
     color: #ffffff;
   }
   #channelList {
     list-style: none;
-    max-height: 55vh;
+    flex: 1;
     overflow-y: auto;
-    border: 2px solid #333;
-    border-radius: 6px;
+    overflow-x: hidden;
+    border: 1px solid #333;
+    border-radius: 4px;
   }
   #channelList li {
-    font-size: 22px;
-    padding: 14px 18px;
+    font-size: 16px;
+    padding: 10px 12px;
     border-bottom: 1px solid #262626;
     color: #e6e6e6;
     cursor: pointer;
@@ -137,10 +154,7 @@
     outline: 3px solid #ffd166;
   }
   #status {
-    margin-top: 16px;
-    font-size: 18px;
-    color: #ffb347;
-    min-height: 24px;
+    display: none;
   }
 
   /* Tela do player */
@@ -171,41 +185,51 @@
     display: none;
   }
 
-  /* Layout de colunas: Lista + Logo (compatível com navegadores antigos) */
   .channels-container {
     width: 100%;
     overflow: hidden; /* Clearfix para floats */
-    margin-bottom: 30px;
+    margin-bottom: 0;
+    flex: 1;
+    display: flex;
+    gap: 10px;
   }
 
   .channels-column-left {
-    float: left;
+    float: none;
     width: 62%;
-    margin-right: 3%;
+    margin-right: 0;
+    flex: 1;
+    overflow: hidden;
   }
 
   .channels-column-right {
-    float: left;
+    float: none;
     width: 35%;
+    flex: 0 0 35%;
   }
 
   /* Logo do canal */
   #channelLogo {
     background: rgba(15, 23, 42, 0.95);
-    padding: 20px;
-    border: 2px solid #1f2937;
-    border-radius: 10px;
+    padding: 12px;
+    border: 1px solid #1f2937;
+    border-radius: 6px;
     text-align: center;
-    min-height: 300px;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
   }
 
   #logoImage {
     max-width: 100%;
-    max-height: 280px;
+    max-height: 100%;
     width: auto;
     height: auto;
-    margin-bottom: 10px;
-    border-radius: 8px;
+    margin-bottom: 8px;
+    border-radius: 4px;
     display: block;
     margin-left: auto;
     margin-right: auto;
@@ -213,9 +237,8 @@
 
   #logoPlaceholder {
     color: #888;
-    font-size: 16px;
+    font-size: 12px;
     text-align: center;
-    padding-top: 130px;
   }
 
   /* Fallback para navegadores sem suporte a flexbox */
